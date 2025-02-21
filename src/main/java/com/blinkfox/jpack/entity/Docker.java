@@ -14,6 +14,11 @@ import lombok.Setter;
 public class Docker extends BaseConfig {
 
     /**
+     * URL of the docker host as specified in pom.xml
+     */
+    private String dockerHost;
+
+    /**
      * Dockerfile 路径地址，不配置的话，则默认与　pom.xml　在统一路径.
      */
     private String dockerfile;
@@ -69,6 +74,11 @@ public class Docker extends BaseConfig {
      * @since v1.4.0
      */
     private RegistryUser registryUser;
+
+    /**
+     * 镜像打新标签.
+     */
+    private String newTagName;
 
     /**
      * 获取镜像的 tar 包的名称.

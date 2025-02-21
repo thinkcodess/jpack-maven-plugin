@@ -128,9 +128,14 @@ public class DockerPackHandler extends AbstractPackHandler {
      */
     private void checkDockerEnv() {
         try {
-            this.dockerClient = DefaultDockerClient.fromEnv().build();
-            this.dockerClient.ping();
+            Docker docker = super.packInfo.getDocker();
+            DefaultDockerClient.Builder builder = DefaultDockerClient.fromEnv();
 
+            if (StringUtils.isNotBlank(docker.getDockerHost())) {
+                builder.uri(docker.getDockerHost());
+            }
+            this.dockerClient =  builder.build();
+            this.dockerClient.ping();
             // 初始化 ~/.dockercfg 文件，防止进行授权时报文件找不到的异常！
             this.initDockercfgFile();
         } catch (Exception e) {
