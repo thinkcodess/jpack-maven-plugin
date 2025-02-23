@@ -229,7 +229,7 @@ Maven 构建成功之后，就可以在 `jpack` 目录中看到一个 `jpack-dem
 docker run -d -p 8080:8080 com.blinkfox/jpack-demo:1.0.0
 ```
 
-稍等一会儿，访问 <http://127.0.0.1:8080> 即可访问服务。
+稍等一会儿，访问 [http://127.0.0.1:8080](http://127.0.0.1:8080) 即可访问服务。
 
 **带参数的方式**：
 
@@ -239,7 +239,7 @@ docker run -d -p 8080:8080 com.blinkfox/jpack-demo:1.0.0
 docker run -d -p 7070:7070 -e JVM_OPTS="-Xms512m -Xmx1024m" -e PROGRAM_ARGS="--server.port=7070" com.blinkfox/jpack-demo:1.0.0
 ```
 
-稍等一会儿，访问 <http://127.0.0.1:7070> 即可访问服务。
+稍等一会儿，访问 [http://127.0.0.1:7070](http://127.0.0.1:7070) 即可访问服务。
 
 ### 4. Helm Chart
 
@@ -411,7 +411,7 @@ jpack 的所有配置参数都非必填或者有默认值。以下是关于 jpac
 `copyResources` 可以包含多个 `copyResource` 子节点配置项，`copyResource` 中有 `from` 和 `to` 两个参数。用于表示从哪里复制到哪里。
 
 - `from`: 复制的源。可以是相对于 `pom.xml` 的相对路径或绝对路径的本地资源，也可以是网络资源文件路径。`from`如果是本地路径时可以是目录也可以是文件。
-- `to`: 需要复制到哪里。不填写或者填写`.`、`/` 时表示的是复制到各平台包的根目录中。如果要填写就只能是目录，可以嵌套多级。如：`abc/def`，表示复制到`abc`目录下的 `def` 目录中，目录会自动创建。
+- `to`: 需要复制到哪里。不填写或者填写 `.`、`/` 时表示的是复制到各平台包的根目录中。如果要填写就只能是目录，可以嵌套多级。如：`abc/def`，表示复制到 `abc`目录下的 `def` 目录中，目录会自动创建。
 
 示例如下：
 
@@ -530,16 +530,19 @@ jpack 的所有配置参数都非必填或者有默认值。以下是关于 jpac
 
 这是用于专门对 Docker 平台生效的配置项，主要包括前面提到的如下几个子配置项及Docker 平台下特有的一些配置项，用法同前面类似，不再赘述：
 
+- `dockerHost`:docker地址。不填写默认为本地，可支持远程路径，如`http://192.168.221.129:2375`
 - `dockerfile`: 构建 Docker 镜像的 `Dockerfile` 文件的相对路径，没有此配置项或者不填写，则使用 jpack 默认的 `Dockerfile` 文件.
 - `registry`: 远程仓库地址，不填写则默认为 Dockerhub。
 - `repo`: 构建镜像的仓库名，类似于 `groupId`，不填写则默认使用 `groupId`。
 - `name`: 构建镜像的名称，类似于 `artifactId`，不填写则默认使用 `artifactId`。
 - `tag`: 构建镜像的版本标签，不填写则默认使用 `version`。
+- `newTagName`:镜像标签新名称，不填写默认为`repo + "/" + name + ":" + tag`，如果registry不为空，为`registry + repo + "/" + name + ":" + tag`；
 - `fromImage`: Dockerfile 文件中 FROM 引用的基础镜像，如果没有配置该值，将默认使用 `openjdk:8-jdk-alpine`。
 - `expose`: 对外暴露的端口，不配置该值，将不会在 Dockerfile 中生成 `EXPOSE` 指令。
 - `volumes`: 挂载的数据卷，不填写则默认挂载 "/tmp" 和 "/logs" 目录。
 - `customCommands`: 自定义的 Dockerfile 指令选项，可以填写多个值，每个值在 Dockerfile 中占一行，充当Dockerfile 中的一条指令。
 - `extraGoals`: 额外的构建目标，默认只是构建镜像，如果你需要配置导出镜像包可以再填写 `save`，推送到 Dockerhub 可以再填写 `push`。
+- retryPushCount：推送镜像重试次数，默认为3
 - `vmOptions`: 针对 Docker 平台的 JVM 选项参数配置。如果你配置了这个值，那么在 Docker 下将会覆盖通用的 `vmOptions` 的值。
 - `programArgs`: 针对 Docker 平台的程序参数配置。如果你配置了这个值，那么在 Docker 下将会覆盖通用的 `programArgs` 的值。
 - `configFiles`: 针对 Docker 平台的配置文件配置。如果你配置了这个值，那么在 Docker 下将会覆盖通用的 `configFiles` 的值。
@@ -549,7 +552,7 @@ jpack 的所有配置参数都非必填或者有默认值。以下是关于 jpac
   - `username`：registry 仓库的用户名。可以对用户名进行加密，只要将用户名以 `ENCRYPT#` 开头就表示是加过密的用户名，否则说明直接使用原文。
   - `password`：registry 仓库的密码。可以对密码进行加密，只要将文本内容以 `ENCRYPT#` 开头就表示是加过密的密码，否则说明直接使用原文密码。
   - `email`：用户的邮箱信息，非必填。
-  - `serverAddress`：registry 仓库的服务地址，如果不填写就默认使用上面的 `registry` 地址，通常你不需要填写。 
+  - `serverAddress`：registry 仓库的服务地址，如果不填写就默认使用上面的 `registry` 地址，通常你不需要填写。
   - `identityToken`：Token 标识，通常你可以不用填写。
 
 > 注：关于 `registryUser` 中的用户名或密码加密，你可以使用 jpack 中的 `AesKit.encrypt("your-username");` 方法进行加密。该种加密并不安全，意在防君子，防不了小人。
