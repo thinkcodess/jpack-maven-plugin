@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -159,7 +160,7 @@ public final class CompressKit {
         try (FileOutputStream fos = new FileOutputStream(tarGzFile);
                 BufferedOutputStream bos = new BufferedOutputStream(fos);
                 GzipCompressorOutputStream gcos = new GzipCompressorOutputStream(bos);
-                TarArchiveOutputStream taos = new TarArchiveOutputStream(gcos)) {
+                TarArchiveOutputStream taos = new TarArchiveOutputStream(gcos, StandardCharsets.UTF_8.name())) {
             String tarGzName = tarGzFile.getName().split(".tar.gz")[0] + File.separator;
             File[] children = new File(dirPath).listFiles();
             if (children != null && children.length > 0) {
