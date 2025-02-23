@@ -18,6 +18,7 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.ProgressMessage;
 import com.spotify.docker.client.messages.RegistryAuth;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -135,7 +137,7 @@ public class DockerPackHandler extends AbstractPackHandler {
             if (StringUtils.isNotBlank(docker.getDockerHost())) {
                 builder.uri(docker.getDockerHost());
             }
-            this.dockerClient =  builder.build();
+            this.dockerClient = builder.build();
             this.dockerClient.ping();
             // 初始化 ~/.dockercfg 文件，防止进行授权时报文件找不到的异常！
             this.initDockercfgFile();
@@ -247,26 +249,27 @@ public class DockerPackHandler extends AbstractPackHandler {
     }
 
     /**
-     * 给镜像打含`registry`前缀的标签，便于后续的镜像推送.
-     * 20250221 修改，打标签使用newTagName标签值，
-     *
-     * @return 打了含`registry`前缀的标签 ，20250221修改，tag为newTagName标签的即系那个，
+     * 如果newTagName标签值有值，给镜像打registry+/+newTagName标签，
+     * newTagName标签值没有有值，给镜像打registry+/+imageName标签,便于后续的镜像推送.
+     * @return 镜像的tag标签
      */
     private String tagImage() {
-        // 如果 registry 为空，则不需要打标签，直接返回镜像名称即可.
-        /* String registry = super.packInfo.getDocker().getRegistry();
-        if (StringUtils.isBlank(registry)) {
-            return this.imageName;
-        }*/
-
-        //
-        // 判断是否已经打过标签了，如果已经打过标签就直接返回镜像标签名称即可.
+        // 如果newTagName值，镜像tag用newTagName值
         String imageTagName = super.packInfo.getDocker().getNewTagName();
         if (StringUtils.isBlank(imageTagName)) {
-            return this.imageName;
+            imageTagName = this.imageName;
         }
 
-        if (StringUtils.isNotBlank(imageTagName) && this.tagged) {
+        // 如果 registry 为空，则不需要打标签，直接返回镜像名称即可.
+        String registry = super.packInfo.getDocker().getRegistry();
+        if (StringUtils.isBlank(registry)) {
+            return imageTagName;
+        } else {
+            imageTagName = registry + "/" + imageTagName;
+        }
+
+        // 判断是否已经打过标签了，如果已经打过标签就直接返回镜像标签名称即可.
+        if (this.tagged) {
             return imageTagName;
         }
 
@@ -366,7 +369,7 @@ public class DockerPackHandler extends AbstractPackHandler {
     /**
      * 设置推送镜像到远程仓库的服务地址信息.
      *
-     * @param builder RegistryAuth 的构建器对象
+     * @param builder       RegistryAuth 的构建器对象
      * @param serverAddress 配置在 {@code registryUser} 中的远程镜像仓库的服务地址
      * @author blinkfox on 2020-06-03
      * @since v1.4.0
