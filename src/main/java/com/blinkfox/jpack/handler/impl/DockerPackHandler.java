@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.codehaus.plexus.util.FileUtils;
@@ -247,19 +248,25 @@ public class DockerPackHandler extends AbstractPackHandler {
 
     /**
      * 给镜像打含`registry`前缀的标签，便于后续的镜像推送.
+     * 20250221 修改，打标签使用newTagName标签值，
      *
-     * @return 打了含`registry`前缀的标签
+     * @return 打了含`registry`前缀的标签 ，20250221修改，tag为newTagName标签的即系那个，
      */
     private String tagImage() {
         // 如果 registry 为空，则不需要打标签，直接返回镜像名称即可.
-        String registry = super.packInfo.getDocker().getRegistry();
+        /* String registry = super.packInfo.getDocker().getRegistry();
         if (StringUtils.isBlank(registry)) {
+            return this.imageName;
+        }*/
+
+        //
+        // 判断是否已经打过标签了，如果已经打过标签就直接返回镜像标签名称即可.
+        String imageTagName = super.packInfo.getDocker().getNewTagName();
+        if (StringUtils.isBlank(imageTagName)) {
             return this.imageName;
         }
 
-        // 判断是否已经打过标签了，如果已经打过标签就直接返回镜像标签名称即可.
-        String imageTagName = registry + "/" + this.imageName;
-        if (this.tagged) {
+        if (StringUtils.isNotBlank(imageTagName) && this.tagged) {
             return imageTagName;
         }
 
@@ -276,6 +283,7 @@ public class DockerPackHandler extends AbstractPackHandler {
     /**
      * 推送像 Docker 镜像到远程仓库.
      */
+    @SneakyThrows
     private void pushImage() {
         // 校验推送的授权是否合法，不合法就不能推送.
         Pair<RegistryAuth, Integer> authPair = this.validRegistryAuth();
@@ -283,20 +291,34 @@ public class DockerPackHandler extends AbstractPackHandler {
             Logger.warn("【权限认证 -> 失败】校验 registry 授权不通过，不能推送镜像到远程镜像仓库中.");
             return;
         }
-
-        try {
-            // 判断 registry 是否配置，如果没有配置就认为默认推送到 dockerhub,就不需要打标签，
-            // 否则就需要打含 `registry` 前缀的标签.
-            final String imageTagName = this.tagImage();
-
-            // 推送镜像到远程镜像仓库中.
-            Logger.info("【推送镜像 -> 进行】正在推送标签为【" + imageTagName + "】的镜像到远程仓库中...");
-            dockerClient.push(imageTagName, this::printProgress, authPair.getLeft());
-            System.out.println();
-            Logger.info("【推送镜像 -> 成功】推送标签为【" + imageTagName + "】的镜像到远程仓库完成.");
-        } catch (Exception e) {
-            throw new DockerPackException(ExceptionEnum.DOCKER_PUSH_EXCEPTION.getMsg(), e);
+        int attempt = 0;
+        int retryPushCount = super.packInfo.getDocker().getRetryPushCount();
+        if (retryPushCount == 0) {
+            retryPushCount = 3;
         }
+
+        // 判断 registry 是否配置，如果没有配置就认为默认推送到 dockerhub,就不需要打标签，
+        // 否则就需要打含 `registry` 前缀的标签.
+        final String imageTagName = this.tagImage();
+        do {
+            try {
+                // 推送镜像到远程镜像仓库中.
+                Logger.info("【推送镜像 -> 进行】正在推送标签为【" + imageTagName + "】的镜像到远程仓库中...");
+                dockerClient.push(imageTagName, this::printProgress, authPair.getLeft());
+                System.out.println();
+                Logger.info("【推送镜像 -> 成功】推送标签为【" + imageTagName + "】的镜像到远程仓库完成.");
+            } catch (Exception e) {
+                if (attempt < retryPushCount) {
+                    Logger.warn("【推送镜像 -> 成功】推送标签为【" + imageTagName + "】的镜像到远程仓库失败，尝试次数："
+                            + attempt);
+                    Thread.sleep(10000);
+                    continue;
+                } else {
+                    throw new DockerPackException(ExceptionEnum.DOCKER_PUSH_EXCEPTION.getMsg(), e);
+                }
+            }
+            break;
+        } while (attempt++ <= retryPushCount);
     }
 
     /**
@@ -387,7 +409,7 @@ public class DockerPackHandler extends AbstractPackHandler {
         String[] goalTypes;
         Docker dockerInfo = super.packInfo.getDocker();
         if (dockerInfo == null || (goalTypes = dockerInfo.getExtraGoals()) == null || goalTypes.length == 0) {
-            Logger.debug("【构建目标 -> 镜像】在 jpack 中未配置 docker 额外构建目标类型'goalTypes'的值，只会构建镜像.");
+            Logger.warn("【构建目标 -> 镜像】在 jpack 中未配置 docker 额外构建目标类型'goalTypes'的值，只会构建镜像.");
             return;
         }
 

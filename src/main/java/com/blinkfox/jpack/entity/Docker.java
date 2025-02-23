@@ -81,6 +81,11 @@ public class Docker extends BaseConfig {
     private String newTagName;
 
     /**
+     * 推送镜像重试次数, defaults to 3.
+     */
+    private int retryPushCount;
+
+    /**
      * 获取镜像的 tar 包的名称.
      *
      * @return 名称字符串
