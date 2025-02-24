@@ -18,7 +18,6 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.ProgressMessage;
 import com.spotify.docker.client.messages.RegistryAuth;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +26,6 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -251,6 +249,7 @@ public class DockerPackHandler extends AbstractPackHandler {
     /**
      * 如果newTagName标签值有值，给镜像打registry+/+newTagName标签，
      * newTagName标签值没有有值，给镜像打registry+/+imageName标签,便于后续的镜像推送.
+     *
      * @return 镜像的tag标签
      */
     private String tagImage() {
@@ -262,9 +261,7 @@ public class DockerPackHandler extends AbstractPackHandler {
 
         // 如果 registry 为空，则不需要打标签，直接返回镜像名称即可.
         String registry = super.packInfo.getDocker().getRegistry();
-        if (StringUtils.isBlank(registry)) {
-            return imageTagName;
-        } else {
+        if (StringUtils.isNotBlank(registry)) {
             imageTagName = registry + "/" + imageTagName;
         }
 
@@ -279,6 +276,7 @@ public class DockerPackHandler extends AbstractPackHandler {
             Logger.info("【镜像标签 -> 成功】已对镜像打了标签:【" + imageTagName + "】.");
             return imageTagName;
         } catch (Exception e) {
+            Logger.error("【构建失败 -> 失败】jpack 执行 Docker 打标签失败。");
             throw new DockerPackException(ExceptionEnum.DOCKER_TAG_EXCEPTION.getMsg(), e);
         }
     }
@@ -312,7 +310,7 @@ public class DockerPackHandler extends AbstractPackHandler {
                 Logger.info("【推送镜像 -> 成功】推送标签为【" + imageTagName + "】的镜像到远程仓库完成.");
             } catch (Exception e) {
                 if (attempt < retryPushCount) {
-                    Logger.warn("【推送镜像 -> 成功】推送标签为【" + imageTagName + "】的镜像到远程仓库失败，尝试次数："
+                    Logger.warn("【推送镜像 -> 失败】推送标签为【" + imageTagName + "】的镜像到远程仓库失败，尝试次数："
                             + attempt);
                     Thread.sleep(10000);
                     continue;
@@ -383,7 +381,7 @@ public class DockerPackHandler extends AbstractPackHandler {
         // 如果 serverAddress 中未配置服务地址信息，就使用 registry 中的信息.
         String registry = super.packInfo.getDocker().getRegistry();
         if (StringUtils.isBlank(registry)) {
-            Logger.warn("【推送镜像 -> 缺失】检测到推送镜像时，你未配置【registry】的服务地址信息.");
+            Logger.warn("【推送镜像 -> 缺失】检测到推送镜像时，你未配置【registry】的服务地址信息，默认推送到Dockerhub.");
             return;
         }
         builder.serverAddress(registry);
