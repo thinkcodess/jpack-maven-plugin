@@ -294,9 +294,9 @@ public class DockerPackHandler extends AbstractPackHandler {
         }
         int attempt = 0;
         int retryPushCount = super.packInfo.getDocker().getRetryPushCount();
-        if (retryPushCount == 0) {
+        /*if (retryPushCount == 0) {
             retryPushCount = 3;
-        }
+        }*/
 
         // 判断 registry 是否配置，如果没有配置就认为默认推送到 dockerhub,就不需要打标签，
         // 否则就需要打含 `registry` 前缀的标签.

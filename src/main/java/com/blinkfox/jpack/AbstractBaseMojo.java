@@ -52,6 +52,12 @@ public abstract class AbstractBaseMojo extends AbstractMojo {
      */
     private static final String[] DEFAULT_VOLUMES = new String[] {"/tmp", "/logs"};
 
+
+    /**
+     * 默认docker重推远端镜像仓库次数.
+     */
+    private static final Integer DEFAULT_RETRY_PUSH_COUNT = 3;
+
     /**
      * Maven 运行时的 target 目录的文件对象.
      */
@@ -281,6 +287,9 @@ public abstract class AbstractBaseMojo extends AbstractMojo {
         }
         if (ArrayUtils.isEmpty(this.docker.getVolumes())) {
             this.docker.setVolumes(DEFAULT_VOLUMES);
+        }
+        if (StringUtils.isBlank(Integer.toString(this.docker.getRetryPushCount()))) {
+            this.docker.setRetryPushCount(DEFAULT_RETRY_PUSH_COUNT);
         }
         return this.docker;
     }
